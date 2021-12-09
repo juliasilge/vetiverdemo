@@ -25,7 +25,7 @@ library(pins)
 model_board <- board_folder(path = "/tmp/test", versioned = TRUE)
 vetiver_pin_write(model_board, v)
 
-## again!
+## again!!
 vetiver_pin_write(model_board, v)
 
 ## again!!!
