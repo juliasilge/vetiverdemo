@@ -19,12 +19,18 @@ library(vetiver)
 v <- vetiver_model(svm_fit, "biv_svm")
 v
 
+library(paws)
+library(glue)
 library(pins)
-library(reticulate)
-sagemaker <- import("sagemaker")
-session <- sagemaker$Session()
-bucket <- session$default_bucket()
-model_board <- board_s3(bucket = bucket, prefix = "mlops_pins/")
+
+bucket <- glue("sagemaker-vetiver-", ids::adjective_animal(style = "kebab"))
+svc <- s3()
+svc$create_bucket(
+    Bucket = bucket,
+    CreateBucketConfiguration = list(LocationConstraint = "us-east-2")
+)
+
+model_board <- board_s3(bucket = bucket, prefix = "pins/")
 vetiver_pin_write(model_board, v)
 
 ## again!
