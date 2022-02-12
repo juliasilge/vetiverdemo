@@ -111,9 +111,9 @@ predict(superbowl_endpoint, new_ads)
 
 ## Example APIs to explore:
 
--   Predict whether content on Netflix is a TV show or movie (unstructured text data): [https://colorado.rstudio.com/rsc/netflix-descriptions/](https://colorado.rstudio.com/rsc/netflix-descriptions/__docs__/#overview)
+-   Predict whether content on Netflix is a TV show or movie (unstructured text data): <https://colorado.rstudio.com/rsc/netflix-descriptions/>
 
--   Predict ridership at Chicago Clark & Lake "L" station (complex time series, robust checking of new data): [https://colorado.rstudio.com/rsc/chicago-ridership-api/](https://colorado.rstudio.com/rsc/chicago-ridership-api/__docs__/#overview)
+-   Predict ridership at Chicago Clark & Lake "L" station (complex time series, robust checking of new data): <https://colorado.rstudio.com/rsc/chicago-ridership-api/>
 
 ## What's next for vetiver?
 
