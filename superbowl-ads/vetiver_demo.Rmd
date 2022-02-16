@@ -84,6 +84,8 @@ model_board <- board_rsconnect() ## also support board_s3(), board_azure(), etc
 model_board %>% vetiver_pin_write(v)
 ```
 
+Document model: <https://vetiver.tidymodels.org/articles/model-card.html>
+
 Deploy model as a REST API:
 
 ```{r}

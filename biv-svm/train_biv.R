@@ -33,7 +33,7 @@ vetiver_pin_write(model_board, v)
 
 library(plumber)
 pr() %>%
-    vetiver_pr_predict(v, type = "class", debug = TRUE) %>%
+    vetiver_api(v, type = "class", debug = TRUE) %>%
     pr_run(port = 8088)
 
 ## vetiver_write_plumber(model_board, "biv_svm")
