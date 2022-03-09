@@ -36,8 +36,20 @@ library(vetiver)
 v <- vetiver_model(netflix_fit, "netflix_descriptions")
 v
 
+## run aws configure sso
+
+library(paws)
+library(glue)
 library(pins)
-model_board <- board_rsconnect()
+identifier <- glue::glue("vetiver-", ids::adjective_animal(style = "kebab"))
+identifier <- as.character(identifier)
+svc <- s3()
+svc$create_bucket(
+    Bucket = identifier,
+    CreateBucketConfiguration = list(LocationConstraint = "us-east-2")
+)
+
+model_board <- board_s3(bucket = identifier)
 vetiver_pin_write(model_board, v)
 
 library(plumber)
@@ -45,9 +57,10 @@ pr() %>%
     vetiver_api(v, debug = TRUE) %>%
     pr_run(port = 8088)
 
-# vetiver_write_plumber(
-#     model_board,
-#     "julia.silge/netflix_descriptions",
-#     debug = TRUE
-# )
+vetiver_write_plumber(model_board, "netflix_descriptions", debug = TRUE)
+vetiver_write_docker(v)
+
+## Building Docker takes a while because installs all packages:
+## docker build -t netflix-descriptions .
+## docker run --rm -p 8787:8787 netflix-descriptions
 
