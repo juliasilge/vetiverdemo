@@ -18,7 +18,7 @@ COPY renv.lock renv.lock
 COPY plumber.R /opt/ml/plumber.R
 
 RUN Rscript -e "install.packages('renv')"
-RUN R -e "renv::restore(repos = c(CRAN = 'https://packagemanager.rstudio.com/cran/latest'))"
+RUN R -e "renv::restore()"
 
 EXPOSE 8000
 ENTRYPOINT ["R", "-e", "pr <- plumber::plumb(rev(commandArgs())[1]); pr$run(host = '0.0.0.0', port = 8000)"]
