@@ -1,0 +1,98 @@
+---
+title: "Deploy with Docker"
+output: html_document
+date: '2022-03-10'
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+See this model deployed on RStudio Connect at <https://colorado.rstudio.com/rsc/netflix-descriptions/>
+
+## Train a model
+
+```{r}
+library(tidymodels)
+library(textrecipes)
+library(themis)
+
+url <- "https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2021/2021-04-20/netflix_titles.csv"
+
+netflix_types <- readr::read_csv(url) %>%
+    select(type, description)
+
+set.seed(123)
+netflix_split <- netflix_types %>%
+    select(type, description) %>%
+    initial_split(strata = type)
+
+netflix_train <- training(netflix_split)
+netflix_test <- testing(netflix_split)
+
+netflix_rec <- recipe(type ~ description, data = netflix_train) %>%
+    step_tokenize(description) %>%
+    step_tokenfilter(description, max_tokens = 1e3) %>%
+    step_tfidf(description) %>%
+    step_normalize(all_numeric_predictors()) %>%
+    step_smote(type)
+
+svm_spec <- svm_linear() %>%
+    set_mode("classification") %>%
+    set_engine("LiblineaR")
+
+netflix_fit <-
+    workflow(netflix_rec, svm_spec) %>%
+    fit(netflix_train)
+```
+
+
+## Create a deployable vetiver model
+
+```{r}
+library(vetiver)
+v <- vetiver_model(netflix_fit, "netflix_descriptions")
+v
+```
+
+## Publish and version model
+
+For this example, we'll use RStudio Connect (but could use any pin board, as long as Docker container can authenticate to it).
+
+```{r}
+library(pins)
+model_board <- board_rsconnect()
+vetiver_pin_write(model_board, v)
+```
+
+## Create a Docker image
+
+```{r}
+vetiver_write_plumber(model_board, "julia.silge/netflix_descriptions", debug = TRUE)
+vetiver_write_docker(v)
+```
+
+What does Dockerfile look like?
+
+```{r echo = FALSE}
+cat(readr::read_lines("Dockerfile"), sep = "\n")
+```
+
+
+Building the Docker container takes a while because it installs all the packages needed to make a prediction with this model. (I'm using `--platform linux/amd64` because I am on an ARM architecture but I want to use RSPM for fast installation of binaries.)
+
+```
+docker build --platform linux/amd64 -t netflix-descriptions .
+```
+
+Also the resulting image is a bit big (>2Gb) since this is an NLP model that requires a lot of packages.
+
+
+Now run! To authenticate to RStudio Connect (to get the pinned vetiver model), I will pass in an `.Renviron` file:
+
+```
+docker run --env-file .Renviron --rm -p 8000:8000 netflix-descriptions
+```
+
+The Docker container is now running! You can interact with it such as???
+

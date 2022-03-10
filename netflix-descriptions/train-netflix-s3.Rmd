@@ -1,5 +1,16 @@
-## https://colorado.rstudio.com/rsc/netflix-descriptions/
+---
+title: "Publish and version with AWS S3"
+output: html_document
+date: '2022-03-10'
+---
 
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Train a model
+
+```{r}
 library(tidymodels)
 library(textrecipes)
 library(themis)
@@ -32,15 +43,34 @@ netflix_fit <-
     workflow(netflix_rec, svm_spec) %>%
     fit(netflix_train)
 
+```
+
+## Create a deployable vetiver model
+
+```{r}
 library(vetiver)
 v <- vetiver_model(netflix_fit, "netflix_descriptions")
 v
 
-## run aws configure sso
+## manually add paws.storage for now
+v$metadata$required_pkgs <- c(v$metadata$required_pkgs, "paws.storage")
+```
 
+## Publish and version model on AWS S3
+
+Before running the next code chunk, you need to authenticate to AWS. I use (in the terminal):
+
+```
+aws configure sso
+```
+
+Now in R:
+
+```{r}
 library(paws)
 library(glue)
 library(pins)
+set.seed(1)
 identifier <- glue::glue("vetiver-", ids::adjective_animal(style = "kebab"))
 identifier <- as.character(identifier)
 svc <- s3()
@@ -51,16 +81,18 @@ svc$create_bucket(
 
 model_board <- board_s3(bucket = identifier)
 vetiver_pin_write(model_board, v)
+```
 
+
+## Create API
+
+```{r}
 library(plumber)
 pr() %>%
     vetiver_api(v, debug = TRUE) %>%
     pr_run(port = 8088)
+```
 
-vetiver_write_plumber(model_board, "netflix_descriptions", debug = TRUE)
-vetiver_write_docker(v)
 
-## Building Docker takes a while because installs all packages:
-## docker build -t netflix-descriptions .
-## docker run --rm -p 8787:8787 netflix-descriptions
+
 

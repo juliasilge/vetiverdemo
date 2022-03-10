@@ -24,8 +24,8 @@ if (FALSE) {
     library(workflows)
     library(yardstick)
 }
-b <- board_s3(bucket = "vetiver-pubescent-akitainu")
-v <- vetiver_pin_read(b, "netflix_descriptions", version = "20220309T041218Z-b73d9")
+b <- board_rsconnect("envvar", server = "https://colorado.rstudio.com/rsc")
+v <- vetiver_pin_read(b, "julia.silge/netflix_descriptions", version = "54015")
 
 #* @plumber
 function(pr) {
