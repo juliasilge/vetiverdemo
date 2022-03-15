@@ -22,4 +22,4 @@ RUN Rscript -e "install.packages('renv')"
 RUN R -e "renv::restore()"
 
 EXPOSE 8000
-ENTRYPOINT ["R", "-e", "pr <- plumber::plumb('/opt/ml/plumber.R'); pr$run(port = 8000)"]
+ENTRYPOINT ["R", "-e", "pr <- plumber::plumb('/opt/ml/plumber.R'); pr$run(host = '0.0.0.0', port = 8000)"]

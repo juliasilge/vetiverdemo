@@ -94,5 +94,12 @@ Now run! To authenticate to RStudio Connect (to get the pinned vetiver model), I
 docker run --env-file .Renviron --rm -p 8000:8000 netflix-descriptions
 ```
 
-The Docker container is now running! You can interact with it such as???
+The Docker container is now running! You can interact with it such as by visiting in a browser at <http://127.0.0.1:8000/__docs__/>
+
+
+When you're done, stop all Docker containers with
+
+```
+docker stop $(docker ps -a -q)
+```
 

@@ -11,12 +11,13 @@
   "Packages": {
     "BBmisc": {
       "Package": "BBmisc",
-      "Version": "1.11",
+      "Version": "1.12",
       "Source": "Repository",
       "Repository": "CRAN",
-      "Hash": "b2ff0878d07259998cd84d739a83b3d9",
+      "Hash": "06759fa192620b04d2ffa8a40a6c3043",
       "Requirements": [
-        "checkmate"
+        "checkmate",
+        "data.table"
       ]
     },
     "DiceDesign": {
@@ -920,13 +921,15 @@
     },
     "parsnip": {
       "Package": "parsnip",
-      "Version": "0.1.7",
+      "Version": "0.2.0",
       "Source": "Repository",
       "Repository": "CRAN",
-      "Hash": "fd9d54428ede9ce9fd10b8f3d6d8585d",
+      "Hash": "a285e4f8bf522b406deae5ddf496db91",
       "Requirements": [
+        "cli",
         "dplyr",
         "generics",
+        "ggplot2",
         "globals",
         "glue",
         "hardhat",
@@ -937,7 +940,8 @@
         "rlang",
         "tibble",
         "tidyr",
-        "vctrs"
+        "vctrs",
+        "withr"
       ]
     },
     "pillar": {
@@ -1512,14 +1516,20 @@
     },
     "vetiver": {
       "Package": "vetiver",
-      "Version": "0.1.2",
-      "Source": "Repository",
-      "Repository": "CRAN",
-      "Hash": "009c2ba3b1ebb9d50d1f11a140375030",
+      "Version": "0.1.3.9000",
+      "Source": "GitHub",
+      "RemoteType": "github",
+      "RemoteHost": "api.github.com",
+      "RemoteRepo": "vetiver",
+      "RemoteUsername": "tidymodels",
+      "RemoteRef": "HEAD",
+      "RemoteSha": "fea75fb09b48eb2736a834131a25f7dba0412aac",
+      "Hash": "06613710706f995cfe2185f74dca9bab",
       "Requirements": [
         "butcher",
         "cli",
         "curl",
+        "fs",
         "generics",
         "glue",
         "hardhat",
