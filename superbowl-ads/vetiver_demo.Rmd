@@ -1,7 +1,7 @@
 ---
 title: "MLOps with vetiver"
 author: "Julia Silge"
-date: 2020-02-14
+date: 2020-03-21
 output: html_document
 ---
 
