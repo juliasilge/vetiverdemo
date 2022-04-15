@@ -1,7 +1,7 @@
 ---
 title: "MLOps with vetiver"
 author: "Julia Silge"
-date: 2020-03-21
+date: 2020-04-19
 output: html_document
 ---
 
@@ -11,7 +11,7 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ## The MLOps cycle
 
-![MLOps cycle](https://upload.wikimedia.org/wikipedia/commons/5/52/ModelOpsFlow.png)
+![MLOps cycle](Vetiver_cycle_slide3.png)
 
 *from Wikipedia: <https://en.wikipedia.org/wiki/ModelOps>*
 
