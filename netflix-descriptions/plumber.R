@@ -7,25 +7,15 @@ library(vetiver)
 
 # Packages needed to generate model predictions
 if (FALSE) {
-    library(dials)
-    library(dplyr)
     library(LiblineaR)
     library(parsnip)
-    library(purrr)
     library(recipes)
-    library(rlang)
-    library(rsample)
     library(textrecipes)
     library(themis)
-    library(tibble)
-    library(tidyr)
-    library(tune)
-    library(vctrs)
     library(workflows)
-    library(yardstick)
 }
 b <- board_rsconnect("envvar", server = "https://colorado.rstudio.com/rsc")
-v <- vetiver_pin_read(b, "julia.silge/netflix_descriptions", version = "54179")
+v <- vetiver_pin_read(b, "julia.silge/netflix_descriptions", version = "55497")
 
 #* @plumber
 function(pr) {
