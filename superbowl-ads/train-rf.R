@@ -21,4 +21,4 @@ v <- vetiver_model(rf_fit, "superbowl_rf")
 library(plumber)
 pr() %>%
     vetiver_api(v, debug = TRUE) %>%
-    pr_run(port = 8088)
+    pr_run(port = 8080)

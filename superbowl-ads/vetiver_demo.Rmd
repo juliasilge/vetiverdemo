@@ -1,7 +1,7 @@
 ---
 title: "MLOps with vetiver"
 author: "Julia Silge"
-date: 2020-04-19
+date: 2020-06-08
 output: html_document
 ---
 
@@ -12,8 +12,6 @@ knitr::opts_chunk$set(echo = TRUE)
 ## The MLOps cycle
 
 ![MLOps cycle](Vetiver_cycle_slide3.png)
-
-*from Wikipedia: <https://en.wikipedia.org/wiki/ModelOps>*
 
 Data scientists have effective tools that they ❤️ to:
 
@@ -31,7 +29,7 @@ There is a lack 😩 of effective tools (especially open source) to:
 
 -   trigger retraining
 
-## What is vetiver? <https://vetiver.tidymodels.org/>
+## What is vetiver? <https://vetiver.rstudio.com/>
 
 > *Vetiver, the oil of tranquility, is used as a stabilizing ingredient in perfumery to preserve more volatile fragrances.*
 
@@ -66,7 +64,7 @@ rf_fit <-
 
 Data scientists use tools they love for these steps, like the tidyverse, pandas, tidymodels, scikit-learn, etc.
 
-## Deploy a model
+## Version and deploy a model
 
 Create a deployable model object:
 
@@ -84,7 +82,7 @@ model_board <- board_rsconnect() ## also support board_s3(), board_azure(), etc
 model_board %>% vetiver_pin_write(v)
 ```
 
-Document model: <https://vetiver.tidymodels.org/articles/model-card.html>
+Document model: <https://vetiver.rstudio.com/learn-more/model-card.html>
 
 Deploy model as a REST API:
 
@@ -95,12 +93,22 @@ pr() %>%
     pr_run()
 ```
 
+Deploy to Connect: <https://rstudio.github.io/vetiver-r/dev/reference/vetiver_deploy_rsconnect.html>
+
+Deploy via Docker (after creating plumber file via `vetiver_write_plumber(model_board, "julia.silge/superbowl_rf")`):
+
+```{r}
+vetiver_write_docker(v)
+```
+
+## Predict from a model
+
 Predict for remote vetiver model:
 
 ```{r}
 ## source train-rf.R
 
-superbowl_endpoint <- vetiver_endpoint("http://127.0.0.1:8088/predict")
+superbowl_endpoint <- vetiver_endpoint("http://127.0.0.1:8080/predict")
 superbowl_endpoint
 ```
 
@@ -119,4 +127,6 @@ predict(superbowl_endpoint, new_ads)
 
 ## What's next for vetiver?
 
-Monitoring, easier deployment to cloud platforms
+<https://github.com/orgs/rstudio/projects/82/views/3>
+
+Fluent support for monitoring, more documentation
