@@ -1,3 +1,16 @@
+---
+title: "Using vetiver on SageMaker"
+output: html_document
+date: '2022-06-23'
+---
+
+    ```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Train a model
+
+```{r}
 library(tidymodels)
 data(bivariate)
 
@@ -10,19 +23,29 @@ svm_spec <-
     svm_linear(mode = "classification") %>%
     set_engine("LiblineaR")
 
-svm_fit <- workflow() %>%
-    add_recipe(biv_rec) %>%
-    add_model(svm_spec) %>%
+svm_fit <- workflow(biv_rec, svm_spec) %>%
     fit(bivariate_train)
 
+```
+
+## Create a deployable vetiver model
+
+```{r}
 library(vetiver)
 v <- vetiver_model(svm_fit, "biv_svm")
 v
 
+## manually add paws.storage for now
+v$metadata$required_pkgs <- c(v$metadata$required_pkgs, "paws.storage")
+```
+
+## Publish and version model on AWS S3
+
+```{r}
 library(paws)
 library(glue)
 library(pins)
-
+set.seed(2)
 identifier <- glue::glue("vetiver-", ids::adjective_animal(style = "kebab"))
 identifier <- as.character(identifier)
 svc <- s3()
@@ -31,15 +54,25 @@ svc$create_bucket(
     CreateBucketConfiguration = list(LocationConstraint = "us-east-2")
 )
 
-model_board <- board_s3(bucket = identifier, prefix = "pins/")
+model_board <- board_s3(bucket = identifier)
 vetiver_pin_write(model_board, v)
+```
 
-## again!
-vetiver_pin_write(model_board, v)
 
-## again!!
-vetiver_pin_write(model_board, v)
+## Create API
 
+To work with API interactively:
+
+    ```{r}
+library(plumber)
+pr() %>%
+    vetiver_api(v, debug = TRUE) %>%
+    pr_run(port = 8088)
+```
+
+To create API app files:
+
+    ```{r}
 vetiver_write_plumber(
     model_board,
     "biv_svm",
@@ -48,7 +81,14 @@ vetiver_write_plumber(
     file = "biv-svm/plumber.R"
 )
 vetiver_write_docker(v, "biv-svm/plumber.R", "biv-svm/")
+```
 
+## Build Docker container
+
+```{r}
 container_registry <- ecr()
 container_registry$create_repository(repositoryName = identifier)
 container_registry$describe_images(repositoryName = identifier)
+```
+
+
