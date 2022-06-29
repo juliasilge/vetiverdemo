@@ -17,8 +17,12 @@ svm_fit <- workflow() %>%
     add_model(svm_spec) %>%
     fit(bivariate_train)
 
+vetiver_metrics <-
+    augment(svm_fit, bivariate_test) %>%
+    metrics(Class, .pred_class)
+
 library(vetiver)
-v <- vetiver_model(svm_fit, "biv_svm")
+v <- vetiver_model(svm_fit, "biv_svm", metadata = list(metrics = vetiver_metrics))
 v
 
 library(pins)
