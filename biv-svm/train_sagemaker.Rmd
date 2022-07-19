@@ -43,7 +43,6 @@ v$metadata$required_pkgs <- c(v$metadata$required_pkgs, "paws.storage")
 
 ```{r}
 library(paws)
-
 library(pins)
 identifier <- "sagemaker-vetiver-biv-svm"
 svc <- s3()
