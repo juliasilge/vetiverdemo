@@ -55,6 +55,8 @@ model_board <- board_s3(bucket = identifier)
 vetiver_pin_write(model_board, v)
 ```
 
+## Build Docker container
+
 To create API app files:
 
 ```{r}
@@ -68,8 +70,6 @@ vetiver_write_plumber(
 )
 vetiver_write_docker(v, port = 8080)
 ```
-
-## Build Docker container
 
 In terminal, in directory with Dockerfile (working directory in this demo):
 
