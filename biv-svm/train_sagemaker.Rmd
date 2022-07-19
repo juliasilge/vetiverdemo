@@ -151,7 +151,7 @@ Get predictions in R:
 ```{r}
 new_biv <- bivariate_test %>% slice_sample(n = 50) %>% jsonlite::toJSON()
 sm_runtime <- sagemakerruntime()
-preds <- sm_runtime$invoke_endpoint("sagemaker-vetiver-biv-svm", new_biv)
+preds <- sm_runtime$invoke_endpoint(sm_model_name, new_biv)
 
 preds_parsed <- rawToChar(preds$Body) %>% jsonlite::fromJSON()
 as_tibble(preds_parsed)
