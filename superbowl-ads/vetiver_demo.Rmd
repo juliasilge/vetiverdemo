@@ -1,7 +1,7 @@
 ---
 title: "MLOps with vetiver"
 author: "Julia Silge"
-date: 2020-06-08
+date: 2020-08-19
 output: html_document
 ---
 
@@ -11,7 +11,7 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ## The MLOps cycle
 
-![MLOps cycle](Vetiver_cycle_slide3.png)
+![MLOps cycle](https://vetiver.rstudio.com/images/ml_ops_cycle.png)
 
 Data scientists have effective tools that they ❤️ to:
 
@@ -128,5 +128,3 @@ predict(superbowl_endpoint, new_ads)
 ## What's next for vetiver?
 
 <https://github.com/orgs/rstudio/projects/82/views/3>
-
-Fluent support for monitoring, more documentation
