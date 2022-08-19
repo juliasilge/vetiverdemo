@@ -1,10 +1,10 @@
 ---
 title: "Using vetiver on SageMaker"
 output: html_document
-date: '2022-06-23'
+date: '2022-07-19'
 ---
 
-    ```{r setup, include=FALSE}
+```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
@@ -15,16 +15,16 @@ library(tidymodels)
 data(bivariate)
 
 biv_rec <-
-    recipe(Class ~ ., data = bivariate_train) %>%
-    step_BoxCox(all_predictors())%>%
-    step_normalize(all_predictors())
+  recipe(Class ~ ., data = bivariate_train) %>%
+  step_BoxCox(all_predictors())%>%
+  step_normalize(all_predictors())
 
 svm_spec <-
-    svm_linear(mode = "classification") %>%
-    set_engine("LiblineaR")
+  svm_linear(mode = "classification") %>%
+  set_engine("LiblineaR")
 
 svm_fit <- workflow(biv_rec, svm_spec) %>%
-    fit(bivariate_train)
+  fit(bivariate_train)
 
 ```
 
@@ -32,7 +32,7 @@ svm_fit <- workflow(biv_rec, svm_spec) %>%
 
 ```{r}
 library(vetiver)
-v <- vetiver_model(svm_fit, "biv_svm")
+v <- vetiver_model(svm_fit, "biv-svm")
 v
 
 ## manually add paws.storage for now
@@ -43,52 +43,119 @@ v$metadata$required_pkgs <- c(v$metadata$required_pkgs, "paws.storage")
 
 ```{r}
 library(paws)
-library(glue)
 library(pins)
-set.seed(2)
-identifier <- glue::glue("vetiver-", ids::adjective_animal(style = "kebab"))
-identifier <- as.character(identifier)
+identifier <- "sagemaker-vetiver-biv-svm"
 svc <- s3()
 svc$create_bucket(
-    Bucket = identifier,
-    CreateBucketConfiguration = list(LocationConstraint = "us-east-2")
+  Bucket = identifier,
+  CreateBucketConfiguration = list(LocationConstraint = "us-east-2")
 )
 
 model_board <- board_s3(bucket = identifier)
 vetiver_pin_write(model_board, v)
 ```
 
-
-## Create API
-
-To work with API interactively:
-
-    ```{r}
-library(plumber)
-pr() %>%
-    vetiver_api(v, debug = TRUE) %>%
-    pr_run(port = 8088)
-```
+## Build Docker container
 
 To create API app files:
 
-    ```{r}
+```{r}
 vetiver_write_plumber(
-    model_board,
-    "biv_svm",
-    type = "class",
-    debug = TRUE,
-    file = "biv-svm/plumber.R"
+  model_board,
+  "biv-svm",
+  type = "class",
+  path = "/invocations",
+  debug = TRUE,
+  file = "plumber.R"
 )
-vetiver_write_docker(v, "biv-svm/plumber.R", "biv-svm/")
+vetiver_write_docker(v, port = 8080)
 ```
 
-## Build Docker container
+In terminal, in directory with Dockerfile (working directory in this demo):
+
+(May need to do `export PATH=/home/sagemaker-user/.local/bin:$PATH` first)
+
+```{bash}
+sm-docker build . --repository sagemaker-vetiver-biv-svm:1.0 --bucket sagemaker-vetiver-biv-svm
+```
+
+Be sure to notice/record image URI!
+
+## Deploy image as SageMaker model
 
 ```{r}
-container_registry <- ecr()
-container_registry$create_repository(repositoryName = identifier)
-container_registry$describe_images(repositoryName = identifier)
+library(reticulate)
+library(glue)
+
+sagemaker <- import("sagemaker")
+role <- sagemaker$get_execution_role()
+
+## set seed here for reproducible identifier
+model_identifier <- glue::glue("vetiver-sagemaker-", ids::adjective_animal(style = "kebab"))
+sm_model_name <- model_identifier
+endpoint_config <- glue("{model_identifier}-endpoint-config")
 ```
+
+```{r}
+sm <- sagemaker()
+
+## use image URI from building:
+sm$create_model(
+  ModelName = sm_model_name,
+  ExecutionRoleArn = role,
+  PrimaryContainer = list(
+    Image = "350573666743.dkr.ecr.us-east-2.amazonaws.com/sagemaker-vetiver-biv-svm:1.0"
+  )
+)
+
+sm$create_endpoint_config(
+  EndpointConfigName = endpoint_config, 
+  ProductionVariants = list(
+    list(
+      VariantName = "AllTraffic",
+      ModelName = sm_model_name,
+      InitialInstanceCount = 1,
+      InstanceType = "ml.t2.medium",
+      InitialVariantWeight = 1
+    )
+  )
+)
+
+sm$create_endpoint(
+  EndpointName = sm_model_name, 
+  EndpointConfigName = endpoint_config
+)
+
+```
+
+
+## Make a prediction with your deployed model
+
+Make a prediction like so in the interactive visual documentation:
+
+```
+[
+  {
+    "A": 100,
+    "B": 10
+  },
+  {
+    "A": 10,
+    "B": 10
+  } 
+]
+```
+
+Get predictions in R:
+
+```{r}
+new_biv <- bivariate_test %>% slice_sample(n = 50) %>% jsonlite::toJSON()
+sm_runtime <- sagemakerruntime()
+preds <- sm_runtime$invoke_endpoint(sm_model_name, new_biv)
+
+preds_parsed <- rawToChar(preds$Body) %>% jsonlite::fromJSON()
+as_tibble(preds_parsed)
+```
+
 
 
