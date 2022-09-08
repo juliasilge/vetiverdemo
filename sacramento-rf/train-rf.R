@@ -11,7 +11,7 @@ rf_fit <-
     fit(Sacramento)
 
 library(vetiver)
-v <- vetiver_model(rf_fit, "sacramento_rf")
+v <- vetiver_model(rf_fit, "julia.silge/sacramento_rf")
 v
 
 library(pins)
@@ -22,6 +22,7 @@ vetiver_deploy_rsconnect(
     model_board,
     "julia.silge/sacramento_rf",
     predict_args = list(debug = TRUE),
+    appId = 10355,
     account = "julia.silge"
 )
 
