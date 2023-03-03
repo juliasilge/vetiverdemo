@@ -1,0 +1,139 @@
+---
+title: "Using vetiver on SageMaker with smdocker"
+output: html_document
+date: '2023-03-03'
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+## Train a model
+
+```{r}
+library(tidyverse)
+library(tidymodels)
+data(bivariate)
+
+biv_rec <-
+  recipe(Class ~ ., data = bivariate_train) %>%
+  step_BoxCox(all_predictors())%>%
+  step_normalize(all_predictors())
+
+svm_spec <-
+  svm_linear(mode = "classification") %>%
+  set_engine("LiblineaR")
+
+svm_fit <- workflow(biv_rec, svm_spec) %>%
+  fit(bivariate_train)
+
+```
+
+## Create a deployable vetiver model
+
+```{r}
+library(vetiver)
+v <- vetiver_model(svm_fit, "biv-svm")
+v
+```
+
+## Publish and version model on AWS S3
+
+```{r}
+library(pins)
+## existing bucket:
+identifier <- "sagemaker-vetiver-anthophobic-longhornbeetle"
+
+model_board <- board_s3(bucket = identifier)
+vetiver_pin_write(model_board, v)
+```
+
+## Build Docker container
+
+To create Dockerfile and build:
+
+```{r}
+vetiver_prepare_docker(
+  model_board, 
+  "biv-svm", 
+  predict_args = list(type = "class", path = "/invocations", debug = TRUE), 
+  docker_args = list(port = 8080)
+)
+
+sm_image_uri <-
+  smdocker::sm_build(
+    repository = glue::glue("{identifier}:1.0"),
+    bucket = identifier
+  )
+
+```
+
+Now set up a model with an endpoint:
+
+```{r}
+## can set seed here for reproducible identifier
+model_identifier <- glue::glue("vetiver-sagemaker-{ids::adjective_animal(style = 'kebab')}")
+sm_model_name <- model_identifier
+endpoint_config <- glue::glue("{model_identifier}-endpoint-config")
+
+sm <- paws::sagemaker()
+role <- smdocker::sagemaker_get_execution_role()
+
+sm$create_model(
+  ModelName = sm_model_name,
+  ExecutionRoleArn = role,
+  PrimaryContainer = list(Image = sm_image_uri)
+)
+
+sm$create_endpoint_config(
+  EndpointConfigName = endpoint_config, 
+  ProductionVariants = list(
+    list(
+      VariantName = "AllTraffic",
+      ModelName = sm_model_name,
+      InitialInstanceCount = 1,
+      InstanceType = "ml.t2.medium",
+      InitialVariantWeight = 1
+    )
+  )
+)
+
+sm$create_endpoint(
+    EndpointName = sm_model_name, 
+    EndpointConfigName = endpoint_config
+)
+```
+
+## Make a prediction with your deployed model
+
+Wait for the endpoint to finish deploying and then make a prediction like so in the interactive visual documentation under "Deployments" and then "Endpoints":
+
+```
+[
+  {
+    "A": 100,
+    "B": 10
+  },
+  {
+    "A": 10,
+    "B": 10
+  } 
+]
+```
+
+Or get predictions in R:
+
+```{r}
+new_biv <- bivariate_test %>% slice_sample(n = 50) %>% jsonlite::toJSON()
+
+sm_runtime <- paws::sagemakerruntime()
+preds <- sm_runtime$invoke_endpoint(sm_model_name, new_biv)
+preds_parsed <- rawToChar(preds$Body) %>% jsonlite::fromJSON()
+as_tibble(preds_parsed)
+```
+
+
+
+
+
