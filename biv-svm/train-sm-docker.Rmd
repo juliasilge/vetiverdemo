@@ -48,61 +48,55 @@ model_board <- board_s3(bucket = identifier)
 vetiver_pin_write(model_board, v)
 ```
 
-## Build Docker container
+## Build Docker container and deploy endpoint (3 functions):
 
 To create Dockerfile and build:
 
 ```{r}
-vetiver_prepare_docker(
-  model_board, 
-  "biv-svm", 
-  predict_args = list(type = "class", path = "/invocations", debug = TRUE), 
-  docker_args = list(port = 8080)
+new_image_uri <- vetiver_sm_build(
+  board = model_board,
+  name = "biv-svm",
+  predict_args = list(type = "class", debug = TRUE),
+  docker_args = list(base_image = "FROM public.ecr.aws/docker/library/r-base:4.2.2")
 )
-
-sm_image_uri <-
-  smdocker::sm_build(
-    repository = glue::glue("{identifier}:1.0"),
-    bucket = identifier
-  )
-
 ```
 
 Now set up a model with an endpoint:
 
 ```{r}
-## can set seed here for reproducible identifier
-model_identifier <- glue::glue("vetiver-sagemaker-{ids::adjective_animal(style = 'kebab')}")
-sm_model_name <- model_identifier
-endpoint_config <- glue::glue("{model_identifier}-endpoint-config")
+model_name <- glue::glue("vetiver-sagemaker-{ids::adjective_animal(style = 'kebab')}")
 
-sm <- paws::sagemaker()
-role <- smdocker::sagemaker_get_execution_role()
-
-sm$create_model(
-  ModelName = sm_model_name,
-  ExecutionRoleArn = role,
-  PrimaryContainer = list(Image = sm_image_uri)
-)
-
-sm$create_endpoint_config(
-  EndpointConfigName = endpoint_config, 
-  ProductionVariants = list(
-    list(
-      VariantName = "AllTraffic",
-      ModelName = sm_model_name,
-      InitialInstanceCount = 1,
-      InstanceType = "ml.t2.medium",
-      InitialVariantWeight = 1
-    )
+model_name <- 
+  vetiver_sm_model(
+    new_image_uri,
+    model_name,
+    tags = list("my-tag" = "support-vector-machine")
   )
-)
 
-sm$create_endpoint(
-    EndpointName = sm_model_name, 
-    EndpointConfigName = endpoint_config
-)
+new_endpoint <- 
+  vetiver_sm_endpoint(
+    model_name,
+    instance_type = "ml.t2.medium",
+    tags = list("my-tag" = "support-vector-machine")
+  )
 ```
+
+## Build Docker container and deploy endpoint (1 big function)):
+
+```{r}
+new_endpoint <-
+  vetiver_deploy_sagemaker(
+    model_board,
+    "biv-svm",
+    predict_args = list(type = "class", debug = TRUE),
+    docker_args = list(base_image = "FROM public.ecr.aws/docker/library/r-base:4.2.2"),
+    repo_name = glue::glue("vetiver-sagemaker-{ids::adjective_animal(style = 'kebab')}"),
+    instance_type = "ml.t2.medium",
+    tags = list("my-tag" = "support-vector-machine")
+  )
+```
+
+
 
 ## Make a prediction with your deployed model
 
@@ -121,18 +115,11 @@ Wait for the endpoint to finish deploying and then make a prediction like so in 
 ]
 ```
 
-Or get predictions in R:
+Get predictions in R:
 
 ```{r}
-new_biv <- bivariate_test %>% slice_sample(n = 50) %>% jsonlite::toJSON()
-
-sm_runtime <- paws::sagemakerruntime()
-preds <- sm_runtime$invoke_endpoint(sm_model_name, new_biv)
-preds_parsed <- rawToChar(preds$Body) %>% jsonlite::fromJSON()
-as_tibble(preds_parsed)
+new_biv <- bivariate_test %>% slice_sample(n = 50) 
+predict(new_endpoint, new_biv)
 ```
-
-
-
 
 
