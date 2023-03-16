@@ -88,11 +88,9 @@ new_endpoint <-
   vetiver_deploy_sagemaker(
     model_board,
     "biv-svm",
+    "ml.t2.medium",
     predict_args = list(type = "class", debug = TRUE),
-    docker_args = list(base_image = "FROM public.ecr.aws/docker/library/r-base:4.2.2"),
-    repo_name = glue::glue("vetiver-sagemaker-{ids::adjective_animal(style = 'kebab')}"),
-    instance_type = "ml.t2.medium",
-    tags = list("my-tag" = "support-vector-machine")
+    repo_name = glue::glue("vetiver-sagemaker-{ids::adjective_animal(style = 'kebab')}")
   )
 ```
 
