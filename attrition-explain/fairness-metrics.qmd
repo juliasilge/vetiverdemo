@@ -1,0 +1,146 @@
+---
+title: "Fairness and explainability with tidymodels + vetiver"
+author: "Julia Silge"
+date: 2023-04-07
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Train a model
+
+```{r}
+library(tidymodels)
+data(attrition)
+```
+
+```{r}
+attrition %>% glimpse()
+```
+
+```{r}
+set.seed(123)
+att_split <- initial_split(attrition, prop = 0.5, strata = Attrition)
+att_train <- training(att_split)
+att_test <- testing(att_split)
+
+final_fit <- 
+    workflow(
+        Attrition ~ JobSatisfaction + MonthlyIncome + OverTime + Department,
+        boost_tree(mode = "classification")
+    ) %>%
+    last_fit(att_split)
+
+rf_fit <- extract_workflow(final_fit) 
+att_augmented <- augment(rf_fit, new_data = att_test)
+
+glimpse(att_augmented)
+```
+
+## Compute fairness metrics
+
+**Demographic parity:** About equal proportion of positive predictions in each subgroup
+
+```{r}
+att_augmented %>%
+    group_by(Education) %>%
+    summarise(pp_proportion = sum(.pred_class == "No") / n())
+```
+
+**Predictive parity:** PPV is about the same for different subgroups
+
+```{r}
+att_augmented %>%
+    group_by(Education) %>%
+    ppv(Attrition, .pred_class)
+```
+
+**Equality of opportunity:**  About the same TPR in different subgroups
+
+```{r}
+## TPR == sensitivity:
+att_augmented %>%
+    group_by(Education) %>%
+    sensitivity(Attrition, .pred_class)
+```
+
+Look for more soon from the tidymodels team on fairness metrics!
+
+## Explain
+
+Create an explainer for our model:
+
+```{r}
+library(DALEXtra)
+vip_features <- c("JobSatisfaction", "MonthlyIncome", "OverTime", "Department")
+
+explainer_rf <- 
+    explain_tidymodels(
+        rf_fit, 
+        data = att_train %>% select(all_of(vip_features)), 
+        y = as.integer(att_train$Attrition)
+    )
+
+shap_values <-
+    predict_parts(
+        explainer = explainer_rf, 
+        new_observation = att_test[111,], 
+        type = "shap",
+        B = 20
+    )
+
+plot(shap_values)
+```
+
+```{r}
+shap_values %>%
+    group_by(variable) %>%
+    summarize(mean_val = mean(contribution), sd_val = sd(contribution)) %>%
+    arrange(mean_val)
+```
+
+
+## Create a deployable model object
+
+```{r}
+library(vetiver)
+
+fairness_metadata <- 
+    att_augmented %>%
+    group_by(Education) %>%
+    ppv(Attrition, .pred_class)
+
+v <- vetiver_model(
+    rf_fit, 
+    "julia.silge/attrition-rf", 
+    metadata = list(fairness_metadata = fairness_metadata)
+)
+
+v
+```
+
+```{r}
+library(pins)
+
+board <- board_connect()
+board %>% vetiver_pin_write(v)
+board %>% pin_write(explainer_rf, "julia.silge/attrition-explainer")
+```
+
+## Customize app endpoints for explainability
+
+To make a default app file:
+
+```{r}
+vetiver_write_plumber(board, "julia.silge/attrition-rf", file = "default-plumber.R")
+```
+
+But code-first data science means we can create the right explainer for our use case!
+
+## Deploy model
+
+Use push-button deploy or `rsconnect::deployAPI()`
+
+
