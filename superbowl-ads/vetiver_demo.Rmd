@@ -1,7 +1,7 @@
 ---
 title: "MLOps with vetiver"
 author: "Julia Silge"
-date: 2020-09-08
+date: 2023-04-07
 output: html_document
 ---
 
@@ -78,13 +78,13 @@ Version and share the model:
 
 ```{r}
 library(pins)
-model_board <- board_rsconnect() ## also support board_s3(), board_azure(), etc
+model_board <- board_connect() ## also support board_s3(), board_azure(), etc
 model_board %>% vetiver_pin_write(v)
 ```
 
 Document model: <https://vetiver.rstudio.com/learn-more/model-card.html>
 
-Deploy model as a REST API:
+Serve model as a REST API:
 
 ```{r}
 library(plumber)
@@ -95,10 +95,10 @@ pr() %>%
 
 Deploy to Connect: <https://rstudio.github.io/vetiver-r/dev/reference/vetiver_deploy_rsconnect.html>
 
-Deploy via Docker (after creating plumber file via `vetiver_write_plumber(model_board, "julia.silge/superbowl-ads")`):
+Deploy via Docker:
 
 ```{r}
-vetiver_write_docker(v)
+vetiver_prepare_docker(board, "julia.silge/superbowl-ads")
 ```
 
 ## Predict from a model
