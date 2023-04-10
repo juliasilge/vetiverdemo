@@ -29,7 +29,7 @@ att_test <- testing(att_split)
 final_fit <- 
     workflow(
         Attrition ~ JobSatisfaction + MonthlyIncome + OverTime + Department,
-        boost_tree(mode = "classification")
+        rand_forest(mode = "classification")
     ) %>%
     last_fit(att_split)
 
@@ -83,6 +83,7 @@ explainer_rf <-
         y = as.integer(att_train$Attrition)
     )
 
+set.seed(555)
 shap_values <-
     predict_parts(
         explainer = explainer_rf, 

@@ -5,10 +5,10 @@ account: julia.silge
 server: colorado.posit.co
 hostUrl:
 appId: 15940
-bundleId: 72523
+bundleId: 72529
 url: https://colorado.posit.co/rsc/content/ac411b7a-f7a8-4e7c-be0f-ae82961ad034/
-when: 1681143558.34073
-lastSyncTime: 1681143558.34073
+when: 1681144412.5227
+lastSyncTime: 1681144412.52271
 asMultiple: FALSE
 asStatic: FALSE
 ignoredFiles: default-plumber.R|fairness-metrics.qmd
