@@ -4,6 +4,8 @@ library(pins)
 library(plumber)
 library(rapidoc)
 library(vetiver)
+## DALEXtra imports reticulate so need to use an empty requirements.txt
+## when deploying on Connect
 library(DALEXtra)
 library(dplyr)
 

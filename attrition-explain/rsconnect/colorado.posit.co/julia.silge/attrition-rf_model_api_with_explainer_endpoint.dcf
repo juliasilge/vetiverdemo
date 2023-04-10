@@ -1,0 +1,14 @@
+name: attrition-rf_model_api_with_explainer_endpoint
+title: attrition-rf model API with explainer endpoint
+username: julia.silge
+account: julia.silge
+server: colorado.posit.co
+hostUrl:
+appId: 15940
+bundleId: 72523
+url: https://colorado.posit.co/rsc/content/ac411b7a-f7a8-4e7c-be0f-ae82961ad034/
+when: 1681143558.34073
+lastSyncTime: 1681143558.34073
+asMultiple: FALSE
+asStatic: FALSE
+ignoredFiles: default-plumber.R|fairness-metrics.qmd
