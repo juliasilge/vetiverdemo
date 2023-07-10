@@ -1,7 +1,7 @@
 ---
 title: "Fairness and explainability with tidymodels + vetiver"
 author: "Julia Silge"
-date: 2023-04-07
+date: 2023-04-14
 output: html_document
 ---
 
