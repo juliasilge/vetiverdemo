@@ -1,0 +1,107 @@
+---
+title: "Monitor model"
+output: 
+  vetiver::vetiver_dashboard:
+    pins:
+      board: !expr pins::board_connect()
+      name: 'julia.silge/seattle_rf'
+      version: NULL
+    storyboard: true
+    theme: 
+      version: 4
+      bootswatch: cosmo
+    display_pins: true
+---
+
+```{r setup, include = FALSE}
+library(flexdashboard)
+library(vetiver)
+library(pins)
+library(plotly)
+
+knitr::opts_chunk$set(echo = FALSE)
+pins <- get_vetiver_dashboard_pins()
+metrics_pin_name <- paste(pins$name, "metrics", sep = "_")
+```
+
+```{r set-up-demo-pins, include = FALSE, eval = FALSE}
+# Before knitting this example monitoring dashboard, execute:
+pin_example_kc_housing_model()
+
+# This function will set up demo model and metrics pins 
+# Instead of real pin URLs, you will see only demo links
+```
+
+```{r load-vetiver-model, include = FALSE}
+# Load deployed model from pin:
+v <- vetiver_pin_read(pins$board, pins$name, version = pins$version)
+meta <- pin_meta(pins$board, pins$name, version = pins$version)
+days_old <- difftime(Sys.Date(), as.Date(meta$created), units = "days")
+
+# Attaches packages needed for prediction:
+attach_pkgs(v$metadata$required_pkgs)
+```
+
+```{r validation, include = FALSE}
+# Load new validation data, for example from database or API:
+validation_df <- mlr3data::kc_housing %>%
+    arrange(date) %>%
+    filter(date >= "2015-01-01") 
+
+validation_aug <- augment(v, validation_df)
+
+new_metrics <-
+    validation_aug %>%
+    vetiver_compute_metrics(date, "week", price, .pred)
+    
+vetiver_pin_metrics(pins$board, new_metrics, metrics_pin_name, overwrite = TRUE)
+```
+
+
+### Model metrics
+
+```{r}
+p1 <- new_metrics %>%
+    ## you can operate on your metrics as needed:
+    filter(.metric %in% c("rmse", "mae"), .n > 20) %>%
+    vetiver_plot_metrics() + 
+    ## you can also operate on the ggplot:
+    scale_size(range = c(2, 5))
+
+p1 <- ggplotly(p1)
+hide_legend(p1)
+```
+
+***
+
+This model was published `r as.numeric(days_old)` days ago.
+
+Plot model metrics over time to *monitor* your model.
+
+### Explore validation data
+
+```{r}
+p2 <-
+    validation_df %>%
+    ggplot(aes(price, after_stat(density), fill = waterfront)) +
+    geom_histogram(alpha = 0.7, position = "identity")
+
+ggplotly(p2)
+```
+
+
+***
+
+Write your own code to make visualizations or tables with the new validation data, and/or the new predictions.
+
+### API visual documentation
+
+```{r echo=FALSE, out.width="100%"}
+## use your own vetiver model API URL here:
+knitr::include_url("https://colorado.rstudio.com/rsc/seattle-housing/", height = "600px")
+```
+
+***
+
+Interact directly with your model via its visual documentation, and get `curl` examples.
+

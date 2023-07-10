@@ -1,0 +1,13 @@
+name: seattle_housing_model_monitoring
+title: Seattle housing model monitoring
+username: julia.silge
+account: julia.silge
+server: colorado.posit.co
+hostUrl: https://colorado.posit.co/rsc/__api__
+appId: 11818
+bundleId: 77105
+url: https://colorado.posit.co/rsc/seattle-housing-dashboard/
+when: 1689025107.09884
+lastSyncTime: 1689025107.09885
+asMultiple: FALSE
+asStatic: TRUE
