@@ -15,8 +15,8 @@ v <- vetiver_model(rf_fit, "julia.silge/sacramento-rf")
 v
 
 library(pins)
-model_board <- board_rsconnect()
-model_board %>% vetiver_pin_write(v)
+model_board <- board_connect()
+model_board %>% vetiver_pin_write(v, check_renv = TRUE)
 
 vetiver_deploy_rsconnect(
     model_board,
