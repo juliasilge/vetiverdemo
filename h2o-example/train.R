@@ -28,8 +28,15 @@ auto_wflow <-
     add_recipe(normalized_rec)
 
 auto_fit <- fit(auto_wflow, data = concrete_train)
-v <- vetiver_model(auto_fit, "julia.silge/concrete_h2o")
-v
+v1 <- vetiver_model(auto_fit, "julia.silge/concrete_h2o")
+v1
 
 model_board <- board_connect()
 model_board |> vetiver_pin_write(v)
+
+
+v2 <- model_board |> vetiver_pin_read("julia.silge/concrete_h2o")
+v2
+
+predict(v1, concrete_test)
+predict(v2, concrete_test)
