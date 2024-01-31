@@ -1,0 +1,70 @@
+---
+title: "Deploy to AWS SageMaker with vetiver"
+author: "Julia Silge"
+date: 2024-01-31
+output: html_document
+---
+
+## Train an example model
+
+```{r}
+library(tidymodels)
+data(Sacramento)
+
+housing_split <- initial_split(Sacramento, strata = price)
+housing_train <- training(housing_split)
+housing_test <- testing(housing_split)
+
+rf_spec <- rand_forest(mode = "regression")
+rf_form <- price ~ type + sqft + beds + baths
+
+rf_fit <-
+    workflow(rf_form, rf_spec) |>
+    fit(housing_train)
+
+library(vetiver)
+v <- vetiver_model(rf_fit, "sacramento-rf")
+v
+```
+
+## Save model to S3
+
+You'll need to have an existing S3 bucket set up for this:
+
+```{r}
+library(pins)
+identifier <- "name-of-my-existing-bucket"
+board <- board_s3(bucket = identifier)
+vetiver_pin_write(board, v)
+```
+
+## Deploy model to SageMaker
+
+```{r}
+endpoint <- 
+    vetiver_deploy_sagemaker(
+        board,
+        "sacramento-rf",
+        instance_type = "ml.t2.medium",
+        predict_args = list(debug = TRUE)
+    )
+```
+
+## Predict from endpoint
+
+```{r}
+new_homes <- housing_test |> slice_sample(n = 50) 
+predict(endpoint, new_homes)
+```
+
+We already had the endpoint returned from `vetiver_deploy_sagemaker()`, but if you are in a new session, you would need to set up your endpoint object with its **name**:
+
+```{r}
+endpoint <- vetiver_endpoint_sagemaker("vetiver-sagemaker-demo-model")
+```
+
+To learn more, check out:
+
+- <https://juliasilge.com/blog/vetiver-sagemaker/>
+- <https://rstudio.github.io/vetiver-r/reference/index.html#sagemaker>
+
